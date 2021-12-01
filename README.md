@@ -4,6 +4,7 @@ A bot that will inform you when the current lobby is full.
 
 ## .env file example
 
+```bash
 export DEPLOY_SSH='root@example.com'
 export DEPLOY_DIRECTORY='/var/www/faflobby_bot/'
 export BOT_TOKEN='1234567890:telegrambottoken'
@@ -12,6 +13,7 @@ export MONGO_HOST=mongo
 export MONGO_USER=user
 export MONGO_PASSWORD=password
 export MONGO_DATABASE=faflobby_bot
+```
 
 ## TODO
 
