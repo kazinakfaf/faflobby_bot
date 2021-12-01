@@ -161,7 +161,7 @@ Thread.new do
       faf_lobby_filled.each do |lobby|
         players = lobby['teams'].map(&:flatten).flatten.reject{|i| i.match(/^(\d)+$/)  }
         Chat.in(player: players).not(last_lobby_full: lobby['uid']).each do |chat|
-          I18n.locale = chat.language_code
+          I18n.locale = chat.locale
           chat.update(last_lobby_full: lobby['uid'])
           bot.send_message(chat_id: chat.id, text: I18n.t('.lobby_filled', lobby: lobby['title']))
         end
