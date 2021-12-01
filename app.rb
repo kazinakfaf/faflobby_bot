@@ -32,9 +32,10 @@ def faf_lobby
   JSON.parse(response)
 end
 
-def faf_lobby_filled
-  faf_lobby.filter {|lobby| lobby['state'] == 'open' && lobby['num_players'] >= lobby['max_players']   } 
+def teams_players teams
+  teams.map(&:flatten).flatten.reject{|i| i.match(/^(\d)+$/)  }
 end
+
 
 Mongoid.configure do |config|
   config.clients.default = {
@@ -55,7 +56,8 @@ class Chat
   include Mongoid::Document
   field :locale, type: String
   field :player, type: String
-  field :last_lobby_full, type: Integer
+  field :lobby, type: Integer # последнее (текущее) лобби игрока
+  field :lobby_at, type: DateTime # когда было выслано последнее сообщение о заполненном лобби
   field :maps, type: Set
 end
 
@@ -158,12 +160,28 @@ Thread.new do
   while true
 
     begin
-      faf_lobby_filled.each do |lobby|
-        players = lobby['teams'].map(&:flatten).flatten.reject{|i| i.match(/^(\d)+$/)  }
-        Chat.in(player: players).not(last_lobby_full: lobby['uid']).each do |chat|
+      faf_lobby.each do |lobby|
+        next if lobby['state'] != 'open'
+
+        all_players = teams_players lobby['teams']
+        
+        Chat.in(player: all_players).each do |chat|
           I18n.locale = chat.locale
-          chat.update(last_lobby_full: lobby['uid'])
-          bot.send_message(chat_id: chat.id, text: I18n.t('.lobby_filled', lobby: lobby['title']))
+          chat.update(lobby: lobby['uid']) if lobby['uid'] != chat.lobby
+
+          observers = lobby['teams']['-1'] || []
+          lobby_is_full = all_players.count - observers.count >= lobby['max_players']
+          
+          # send notify if lobby full
+          # reply notify after 90 seconds 
+          is_time_to_notify = chat.lobby_at ? Time.now - 90.seconds > chat.lobby_at : true
+          if lobby_is_full && is_time_to_notify
+            chat.update(lobby_at: Time.now)
+            bot.send_message(chat_id: chat.id, text: I18n.t('.lobby_filled', lobby: lobby['title']))
+          elsif !lobby_is_full # if lobby not full now, reset time
+            chat.update(lobby_at: nil) if chat.lobby_at
+          end
+
         end
       end
     rescue => e
@@ -171,7 +189,7 @@ Thread.new do
       logger.error e.backtrace.join("\n")
     end
     
-    sleep 5
+    sleep 3
   end
 end
 
