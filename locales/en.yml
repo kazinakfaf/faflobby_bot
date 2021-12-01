@@ -1,0 +1,24 @@
+en:
+  language: "English"
+  lobby_filled: "🔔 Lobby full filled: '%{lobby}'"
+  webhooks:
+    start: 
+      commands: |
+        /player - current player
+        /setplayer - set or change player
+        /unsetplayer - untie the player
+
+        /language - change bot language
+    player:
+      notfound: "Player not set for tracking. You can do this with the command /setplayer"
+    unsetplayer:
+      notice: Player successful unset
+    setplayer:
+      notfound: "Player '%{player}' was not found"
+      success: "Player '%{player}' successful set"
+      respond: "Please send me the player nickname now"
+    language:
+      prompt: Select bot language
+    callback_query:
+      locale: Language changed successfully
+  

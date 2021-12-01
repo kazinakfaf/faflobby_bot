@@ -1,0 +1,53 @@
+version: '3'
+services:
+  ruby:
+    image: ruby:latest
+    command: bash -c 'bundle config set --local path "vendor/bundle" && bundle install  --jobs 4 && bundle exec ruby app.rb'
+    working_dir: /usr/app/
+    volumes:
+      - ./:/usr/app/
+    restart: on-failure
+    networks:
+       - faflobby_bot-net
+    depends_on:
+      - mongo
+      - redis
+    build: .
+  mongo:
+    # Why Mongo 4, not 5 in docker-compose?
+    # I use mongo v4, because I ran into a problem on my VPS:
+    # `Can't install on older hardware as mongo 5.x needs AVX support`
+    image: mongo:4
+    restart: always
+    networks:
+       - faflobby_bot-net
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    volumes:
+         - ./data/mongo:/data/db
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "127.0.0.1:8081:8081"
+    networks:
+       - faflobby_bot-net
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/
+    depends_on:
+      - mongo
+  redis:
+    container_name: redis
+    image: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    hostname: redis
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - faflobby_bot-net
+networks:
+  faflobby_bot-net:
