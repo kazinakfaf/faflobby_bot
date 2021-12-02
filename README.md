@@ -2,6 +2,8 @@
 
 A bot that will inform you when the current lobby is full.
 
+![example](preview.jpg)
+
 ## .env file example
 
 ```bash
